@@ -2283,6 +2283,11 @@ static u8 rtn_fuzz(afl_state_t *afl, u32 key, u8 *orig_buf, u8 *buf, u8 *cbuf,
 // afl->queue_cur->exec_cksum
 u8 input_to_state_stage(afl_state_t *afl, u8 *orig_buf, u8 *buf, u32 len) {
 
+  if (afl->cmplog_lvl == 2) {
+    afl->queue_cur->colorized = 2;
+    return 0;
+  }
+
   u8 r = 1;
   if (unlikely(!afl->pass_stats)) {
 
