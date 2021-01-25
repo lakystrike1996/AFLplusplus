@@ -29,7 +29,7 @@
 #include "cmplog.h"
 
 //#define _DEBUG
-//#define COMBINE
+#define COMBINE
 //#define CMPLOG_INTROSPECTION
 //#define ARITHMETIC_LESSER_GREATER
 //#define TRANSFORM
@@ -53,7 +53,6 @@ enum {
 enum {
 
   LVL1 = 1,  // Integer solving
-  LVL2 = 2,  // FP solving
   LVL3 = 4   // expensive tranformations
 
 };
@@ -964,8 +963,7 @@ static u8 cmp_extend_encoding(afl_state_t *afl, struct cmp_header *h,
   // we only allow this for ascii2integer (above)
   if (unlikely(pattern == o_pattern)) { return 0; }
 
-  if ((lvl & LVL1) || ((lvl & LVL2) && (attr >= IS_FP && attr < IS_FP_MOD)) ||
-      attr >= IS_FP_MOD) {
+  if (lvl & LVL1) {
 
     if (SHAPE_BYTES(h->shape) >= 8 && *status != 1) {
 
@@ -1436,8 +1434,6 @@ static u8 cmp_fuzz(afl_state_t *afl, u32 key, u8 *orig_buf, u8 *buf, u8 *cbuf,
                    u32 len, u32 lvl, struct tainted *taint) {
 
   struct cmp_header *h = &afl->shm.cmp_map->headers[key];
-  // FP handling only from lvl 2 onwards
-  if ((h->attribute & IS_FP) && lvl < LVL2) { return 0; }
 
   struct tainted *t;
   u32             i, j, idx, taint_len, loggeds;
@@ -1612,7 +1608,7 @@ static u8 cmp_fuzz(afl_state_t *afl, u32 key, u8 *orig_buf, u8 *buf, u8 *cbuf,
       // if we got here their own special trials failed and it might just be
       // a cast from e.g. u64 to u128 from the input data.
 
-      if ((o->v0 != orig_o->v0 || lvl >= LVL3) && orig_o->v0 != orig_o->v1) {
+      if ((o->v0 != orig_o->v0) && orig_o->v0 != orig_o->v1) {
 
         if (unlikely(cmp_extend_encoding(
                 afl, h, o->v0, o->v1, orig_o->v0, orig_o->v1, h->attribute, idx,
@@ -1632,7 +1628,7 @@ static u8 cmp_fuzz(afl_state_t *afl, u32 key, u8 *orig_buf, u8 *buf, u8 *cbuf,
       }
 
       status = 0;
-      if ((o->v1 != orig_o->v1 || lvl >= LVL3) && orig_o->v0 != orig_o->v1) {
+      if ((o->v1 != orig_o->v1) && orig_o->v0 != orig_o->v1) {
 
         if (unlikely(cmp_extend_encoding(
                 afl, h, o->v1, o->v0, orig_o->v1, orig_o->v0, h->attribute, idx,
@@ -2389,8 +2385,7 @@ u8 input_to_state_stage(afl_state_t *afl, u8 *orig_buf, u8 *buf, u32 len) {
 
   }
 
-  if (cmplog_lvl >= 2 && cmplog_done < 2) { lvl += LVL2; }
-  if (cmplog_lvl >= 3 && cmplog_done < 3) { lvl += LVL3; }
+  if (cmplog_lvl >= 1 && cmplog_done < 3) { lvl += LVL3; }
 
 #ifdef COMBINE
   u8 *cbuf = afl_realloc((void **)&afl->in_scratch_buf, len + 128);
