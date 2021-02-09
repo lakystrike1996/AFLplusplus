@@ -1856,7 +1856,13 @@ custom_mutator_stage:
 
           if (mutated_size > 0) {
 
-            if (common_fuzz_stuff(afl, mutated_buf, (u32)mutated_size)) {
+            u8 res = common_fuzz_stuff(afl, mutated_buf, (u32)mutated_size);
+
+            /* callback method to inform the custom mutator about changes in coverage 
+              caused by the last mutation. */
+            el->afl_custom_mutation_feedback(afl->fsrv.trace_bits, afl->fsrv.map_size);
+
+            if (res) {
 
               goto abandon_entry;
 
