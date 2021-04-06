@@ -190,7 +190,7 @@
    (note that if this value is changed, several areas in afl-cc.c, afl-fuzz.c
    and afl-fuzz-state.c have to be changed as well! */
 
-#define MAX_FILE (1 * 1 * 1024U)
+//#define MAX_FILE (1 * 1 * 1024U)
 
 /* The same, for the test case minimizer: */
 
